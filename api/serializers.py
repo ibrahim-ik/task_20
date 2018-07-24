@@ -1,5 +1,32 @@
 from rest_framework import serializers
-from restaurants.models import Restaurant
+from restaurants.models import Restaurant, User, Item
+
+
+
+class RestaurantUserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = [
+        'username',
+        'first_name',
+        'last_name',
+        'email',
+        ]
+
+
+
+class RestaurantItemSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Item
+        fields = [
+        'name',
+        'description',
+        'price',
+        ]
+
+
 
 class RestaurantListSerializer(serializers.ModelSerializer):
     detail = serializers.HyperlinkedIdentityField(
@@ -17,7 +44,9 @@ class RestaurantListSerializer(serializers.ModelSerializer):
         lookup_field = "id",
         lookup_url_kwarg = "restaurant_id"
         )
+
     class Meta:
+
         model = Restaurant
         fields = [
             'name',
@@ -28,8 +57,11 @@ class RestaurantListSerializer(serializers.ModelSerializer):
             'delete',
             ]
 
-
 class RestaurantDetailSerializer(serializers.ModelSerializer):
+
+    owner = RestaurantUserSerializer()
+    items = serializers.SerializerMethodField()
+
     update = serializers.HyperlinkedIdentityField(
         view_name = "api-update",
         lookup_field = "id",
@@ -40,18 +72,25 @@ class RestaurantDetailSerializer(serializers.ModelSerializer):
         lookup_field = "id",
         lookup_url_kwarg = "restaurant_id"
         )
+
     class Meta:
         model = Restaurant
         fields = [
             'id',
-            'owner',
             'name',
             'description',
             'opening_time',
             'closing_time',
             'update',
             'delete',
+            'owner',
+            'items',
             ]
+
+    def get_items(self, obj):
+        items = Item.objects.filter(restaurant=obj)
+        return RestaurantItemSerializer(items, many=True).data
+
 
 class RestaurantCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,3 +101,4 @@ class RestaurantCreateUpdateSerializer(serializers.ModelSerializer):
             'opening_time',
             'closing_time',
             ]
+
